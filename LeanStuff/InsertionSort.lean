@@ -19,19 +19,18 @@ inserts one natural number into an already sorted list.
 -- theorem insertionSort_correct : IsNatSorter insertionSort := by
 --   ...
 
-def insertIntoSorted {α : Type } (order: TotalOrder α) (n : α)
-    (xs : List α) : List α :=
+def insertIntoSorted {α : Type } (order: TotalOrder α) (xs : List α) (n : α) : List α :=
   match xs with
   | [] => [n]
   | a :: rest => if order.rel a n
-        then a :: insertIntoSorted order n rest
+        then a :: insertIntoSorted order rest n
         else n :: a :: rest
 
-#eval insertIntoSorted natLeOrder 3 [1, 2, 4, 5]
+#eval insertIntoSorted natLeOrder [1, 2, 4, 5] 3
 
 theorem insert_preserves_elements {α : Type}
-  (order: TotalOrder α) (n : α) (xs : List α) :
-  List.Perm (n :: xs) (insertIntoSorted order n xs) := by
+  (order: TotalOrder α) (xs : List α) (n : α) :
+  List.Perm (n :: xs) (insertIntoSorted order xs n) := by
   induction xs with
   | nil => rfl
   | cons a rest ih =>
@@ -45,8 +44,8 @@ theorem insert_preserves_elements {α : Type}
 
 -- Theorem: inserting into an ordered list preserves its ordering.
 theorem insert_preserves_order {α : Type}
-  (order: TotalOrder α) (n : α) (xs : List α) :
-  IsOrdered order xs → IsOrdered order (insertIntoSorted order n xs) := by
+  (order: TotalOrder α) (xs : List α) (n : α) :
+  IsOrdered order xs → IsOrdered order (insertIntoSorted order xs n) := by
   induction xs generalizing n with
   | nil =>
     intro hxs
@@ -55,18 +54,16 @@ theorem insert_preserves_order {α : Type}
     simp
   | cons a rest ih =>
     intro hxs
-    by_cases h : order.rel a n
-    · unfold insertIntoSorted
-      simp only [if_pos h]
-      unfold IsOrdered
-      unfold IsOrdered at hxs
+    unfold insertIntoSorted
+    split -- by_cases h : order.rel a n
+    case isTrue h =>
       cases hxs with
       | cons ha hrest =>
         refine List.Pairwise.cons ?_ ?_
         · intro b hb
           -- The inserted tail contains only `n` and the old elements of `rest`.
           have hb' : b ∈ n :: rest :=
-            (insert_preserves_elements order n rest).mem_iff.mpr hb
+            (insert_preserves_elements order rest n).mem_iff.mpr hb
           simp only [List.mem_cons] at hb'
           cases hb' with
           | inl hbn =>
@@ -74,10 +71,7 @@ theorem insert_preserves_order {α : Type}
             exact h
           | inr hbr => exact ha b hbr
         · exact ih n hrest
-    · unfold insertIntoSorted
-      simp only [if_neg h]
-      unfold IsOrdered
-      unfold IsOrdered at hxs
+    case isFalse h =>
       cases hxs with
       | cons ha hrest =>
         refine List.Pairwise.cons ?_ ?_
@@ -94,8 +88,8 @@ theorem insert_preserves_order {α : Type}
         · exact List.Pairwise.cons ha hrest
 
 theorem insert_preserves_order_short {α : Type}
-    (order : TotalOrder α) (n : α) (xs : List α) :
-    IsOrdered order xs → IsOrdered order (insertIntoSorted order n xs) := by
+    (order : TotalOrder α) (xs : List α) (n : α) :
+    IsOrdered order xs → IsOrdered order (insertIntoSorted order xs n) := by
   induction xs generalizing n with
   | nil => simp [IsOrdered, insertIntoSorted]
   | cons a rest ih =>
@@ -104,8 +98,37 @@ theorem insert_preserves_order_short {α : Type}
     unfold IsOrdered at hxs ⊢
     split
     · simp only [List.pairwise_cons] at hxs ⊢
-      have hp := insert_preserves_elements order n rest
+      have hp := insert_preserves_elements order rest n
       unfold IsOrdered at ih
       grind [hp.mem_iff]
     · simp only [List.pairwise_cons, List.mem_cons] at hxs ⊢
       grind [order.laws.total, order.laws.transitive]
+
+def insertionSort {α : Type} (order: TotalOrder α) (xs : List α) : List α :=
+  xs.foldl (insertIntoSorted order) []
+
+#eval insertionSort natLeOrder [5,3,1,4,2]
+#eval insertionSort natLeOrder [1,2,1,2,1]
+
+theorem insertionSort_preserves_order_from_acc {α : Type}
+    (order : TotalOrder α) (xs acc : List α) :
+    IsOrdered order acc →
+    IsOrdered order (xs.foldl (insertIntoSorted order) acc) := by
+  intro hacc
+  induction xs generalizing acc with
+  | nil =>
+    simp
+    exact hacc
+  | cons x xs ih =>
+    simp
+    exact ih (insertIntoSorted order acc x) (insert_preserves_order order acc x hacc)
+
+
+theorem insertion_sort_returns_ordered_list {α : Type}
+    (order: TotalOrder α) (xs: List α) :
+    IsOrdered order (insertionSort order xs) := by
+  unfold insertionSort
+  let hnil : IsOrdered order [] := by
+    unfold IsOrdered
+    simp
+  exact insertionSort_preserves_order_from_acc order xs [] hnil
