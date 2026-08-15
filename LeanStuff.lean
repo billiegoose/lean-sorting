@@ -1,3 +1,5 @@
--- This module serves as the root of the `LeanStuff` library.
--- Import modules here that should be built as part of the library.
-import LeanStuff.Basic
+import LeanStuff.Sorting
+
+/-!
+The public entry point for the library's reusable definitions.
+-/
