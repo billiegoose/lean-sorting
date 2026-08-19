@@ -13,11 +13,22 @@ def parseNatStdin : IO (List Nat) := do
     |>.filter (fun token => !token.isEmpty)
     |>.mapM parseNatToken
 
+def parseNatStdinArray : IO (Array Nat) := do
+  let nums ← parseNatStdin
+  pure nums.toArray
+
 def printNatList (xs : List Nat) : IO Unit :=
   IO.println <| String.intercalate " " (xs.map toString)
+
+def printNatArray (xs : Array Nat) : IO Unit :=
+  printNatList xs.toList
 
 def runNatSorter (sort : List Nat → List Nat) : IO Unit := do
   let nums ← parseNatStdin
   printNatList (sort nums)
+
+def runNatArraySorter (sort : Array Nat → Array Nat) : IO Unit := do
+  let nums ← parseNatStdinArray
+  printNatArray (sort nums)
 
 end LeanSorting.Cli

@@ -16,20 +16,28 @@ def parseNatArg (name : String) (value : String) : IO Nat :=
   | some n => pure n
   | none => throw <| IO.userError s!"invalid {name}: {value}\n{usage}"
 
-partial def randomNumbers (count maxValue : Nat) : IO (List Nat) := do
-  let rec build : Nat → List Nat → IO (List Nat)
+partial def randomNumbersArray (count maxValue : Nat) : IO (Array Nat) := do
+  let rec build : Nat → Array Nat → IO (Array Nat)
     | 0, acc => pure acc
     | n + 1, acc => do
         let value ← IO.rand 0 maxValue
-        build n (value :: acc)
-  build count []
+        build n (acc.push value)
+  build count (Array.emptyWithCapacity count)
 
 def fingerprint (xs : List Nat) : Nat × Option Nat × Option Nat :=
   (xs.length, xs.head?, xs.getLast?)
 
+def fingerprintArray (xs : Array Nat) : Nat × Option Nat × Option Nat :=
+  (xs.size, xs[0]?, xs[xs.size - 1]?)
+
 def runOnce (sort : List Nat → List Nat) (input : List Nat) : IO Unit := do
   let sorted := sort input
   let fp := fingerprint sorted
+  Runtime.hold fp
+
+def runOnceArray (sort : Array Nat → Array Nat) (input : Array Nat) : IO Unit := do
+  let sorted := sort input
+  let fp := fingerprintArray sorted
   Runtime.hold fp
 
 def runTimed (sort : List Nat → List Nat) (input : List Nat) : IO Nat := do
@@ -39,6 +47,16 @@ def runTimed (sort : List Nat → List Nat) (input : List Nat) : IO Nat := do
   -- the third run is what's measured
   let start ← IO.monoNanosNow
   runOnce sort input
+  let stop ← IO.monoNanosNow
+  pure (stop - start)
+
+def runTimedArray (sort : Array Nat → Array Nat) (input : Array Nat) : IO Nat := do
+  -- these two are warmups
+  runOnceArray sort input
+  runOnceArray sort input
+  -- the third run is what's measured
+  let start ← IO.monoNanosNow
+  runOnceArray sort input
   let stop ← IO.monoNanosNow
   pure (stop - start)
 
@@ -57,7 +75,8 @@ def csvCell : Option Nat → String
 def benchmarkOneSize
     (maxValue size : Nat) (runInsertion runMerge runCounting : Bool) :
     IO (Bool × Bool × Bool) := do
-  let input ← randomNumbers size maxValue
+  let inputArray ← randomNumbersArray size maxValue
+  let input := inputArray.toList
   let insertionNanos? ←
     if runInsertion then
       some <$> runTimed (insertionSort natLeOrder) input
@@ -70,7 +89,7 @@ def benchmarkOneSize
       pure none
   let countingNanos? ←
     if runCounting then
-      some <$> runTimed countingSort input
+      some <$> runTimedArray countingSort inputArray
     else
       pure none
   IO.println s!"{size},{csvCell insertionNanos?},{csvCell mergeNanos?},{csvCell countingNanos?}"

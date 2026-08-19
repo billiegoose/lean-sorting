@@ -26,7 +26,7 @@ def run (args : List String) : IO Unit := do
   | ["merge-sort"] =>
       LeanSorting.Cli.runNatSorter (mergeSort natLeOrder)
   | ["counting-sort"] =>
-      LeanSorting.Cli.runNatSorter countingSort
+      LeanSorting.Cli.runNatArraySorter countingSort
   | "generate-numbers" :: args =>
       LeanSorting.GenerateNumbers.run args
   | "benchmark" :: args =>

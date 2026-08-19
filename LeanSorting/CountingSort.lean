@@ -11,6 +11,9 @@ def countValues (counts : Array Nat) : List Nat → Array Nat
   | [] => counts
   | x :: xs => countValues (counts.modify x (· + 1)) xs
 
+def countValuesArray (counts : Array Nat) (xs : Array Nat) : Array Nat :=
+  xs.foldl (fun counts x => counts.modify x (· + 1)) counts
+
 def expandedCountsList (counts : Array Nat) (value fuel : Nat) : List Nat :=
   match fuel with
   | 0 => []
@@ -18,10 +21,10 @@ def expandedCountsList (counts : Array Nat) (value fuel : Nat) : List Nat :=
       List.replicate (counts.getD value 0) value ++
         expandedCountsList counts (value + 1) fuel
 
-def countingSort (xs: List Nat) : List Nat :=
+def countingSort (xs : Array Nat) : Array Nat :=
   let maxValue := xs.foldl Nat.max 0
-  let counts : Array Nat := countValues (Array.replicate (maxValue + 1) 0) xs
-  (expandCounts counts 0 (maxValue + 1) (Array.emptyWithCapacity xs.length)).toList
+  let counts : Array Nat := countValuesArray (Array.replicate (maxValue + 1) 0) xs
+  expandCounts counts 0 (maxValue + 1) (Array.emptyWithCapacity xs.size)
 
 where
   pushRepeated (out : Array Nat) (value count : Nat) : Array Nat :=
@@ -36,9 +39,39 @@ where
         expandCounts counts (value + 1) fuel
           (pushRepeated out value (counts.getD value 0))
 
-example : countingSort [3,1,4,5,2] = [1,2,3,4,5] := by native_decide
-example : countingSort [3,1,4,1,2,3] = [1,1,2,3,3,4] := by native_decide
-example : countingSort [] = [] := by native_decide
+def countingSortList (xs : List Nat) : List Nat :=
+  let maxValue := xs.foldl Nat.max 0
+  let counts : Array Nat := countValues (Array.replicate (maxValue + 1) 0) xs
+  (countingSort.expandCounts counts 0 (maxValue + 1) (Array.emptyWithCapacity xs.length)).toList
+
+example : countingSort #[3,1,4,5,2] = #[1,2,3,4,5] := by native_decide
+example : countingSort #[3,1,4,1,2,3] = #[1,1,2,3,3,4] := by native_decide
+example : countingSort #[] = #[] := by native_decide
+
+example : countingSortList [3,1,4,5,2] = [1,2,3,4,5] := by native_decide
+example : countingSortList [3,1,4,1,2,3] = [1,1,2,3,3,4] := by native_decide
+example : countingSortList [] = [] := by native_decide
+
+theorem countValuesArray_toArray (counts : Array Nat) (xs : List Nat) :
+    countValuesArray counts xs.toArray = countValues counts xs := by
+  induction xs generalizing counts with
+  | nil =>
+      rfl
+  | cons x xs ih =>
+      unfold countValuesArray
+      rw [List.foldl_toArray]
+      simp only [List.foldl_cons]
+      change
+        List.foldl (fun counts x => counts.modify x (fun x => x + 1))
+          (counts.modify x (fun x => x + 1)) xs =
+        countValues (counts.modify x (fun x => x + 1)) xs
+      simpa [countValuesArray, List.foldl_toArray] using
+        ih (counts.modify x (· + 1))
+
+theorem countingSort_toArray_toList (xs : List Nat) :
+    (countingSort xs.toArray).toList = countingSortList xs := by
+  unfold countingSort countingSortList
+  simp [countValuesArray_toArray, List.size_toArray]
 
 -- Note: I let GPT 5.5 write all of these theorems itself.
 
@@ -231,17 +264,17 @@ theorem countValues_from_zero_getD
   · exact ha
 
 theorem countingSort_eq_expandedCountsList (xs : List Nat) :
-    countingSort xs =
+    countingSortList xs =
       expandedCountsList
         (countValues (Array.replicate (xs.foldl Nat.max 0 + 1) 0) xs)
         0
         (xs.foldl Nat.max 0 + 1) := by
-  unfold countingSort
+  unfold countingSortList
   rw [expandCounts_toList]
   simp [Array.emptyWithCapacity]
 
 theorem countingSort_preserves_order (xs : List Nat) :
-    IsOrdered natLeOrder (countingSort xs) := by
+    IsOrdered natLeOrder (countingSortList xs) := by
   rw [countingSort_eq_expandedCountsList]
   exact expandedCountsList_ordered
     (countValues (Array.replicate (xs.foldl Nat.max 0 + 1) 0) xs)
@@ -249,7 +282,7 @@ theorem countingSort_preserves_order (xs : List Nat) :
     (xs.foldl Nat.max 0 + 1)
 
 theorem countingSort_preserves_elements (xs : List Nat) :
-    List.Perm xs (countingSort xs) := by
+    List.Perm xs (countingSortList xs) := by
   rw [List.perm_iff_count]
   intro a
   rw [countingSort_eq_expandedCountsList]
@@ -264,6 +297,7 @@ theorem countingSort_preserves_elements (xs : List Nat) :
     simp [ha, hzero]
 
 theorem counting_sort_sorts_correctly :
-    IsNatLeSorter countingSort := by
+    IsNatLeSorter (fun xs => (countingSort xs.toArray).toList) := by
   intro xs
+  simp [countingSort_toArray_toList]
   exact ⟨countingSort_preserves_order xs, countingSort_preserves_elements xs⟩
