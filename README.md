@@ -40,14 +40,6 @@ lake exe lean-sorting benchmark > benchmark.csv
 gnuplot scripts/benchmark.gnuplot
 ```
 
-The `N + k` reference curve uses `k = 1000000`, matching the benchmark default.
-If you run the benchmark with a different max value, pass it to gnuplot:
-
-```sh
-lake exe lean-sorting benchmark 500000 > benchmark.csv
-gnuplot -e "max_value=500000" scripts/benchmark.gnuplot
-```
-
 ## Layout
 
 - `LeanSorting/Sorting.lean` defines the sorting contract.

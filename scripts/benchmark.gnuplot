@@ -1,7 +1,6 @@
 csv = "benchmark.csv"
 png = "benchmark.png"
 
-if (!exists("max_value")) max_value = 1000000
 set encoding utf8
 
 last_n(col) = real(system(sprintf("awk -F, 'NR > 1 && $%d != \"\" { n = $1 } END { print n }' %s", col, csv)))
