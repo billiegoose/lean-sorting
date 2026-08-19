@@ -7,18 +7,6 @@ This is the implementation workspace. Start by defining an operation that
 inserts one natural number into an already sorted list.
 -/
 
--- Exercise 1:
--- def insertIntoSorted (n : Nat) (xs : List Nat) : List Nat :=
---   ...
-
--- Exercise 2:
--- def insertionSort (xs : List Nat) : List Nat :=
---   ...
-
--- Eventually, this will be the correctness statement to prove:
--- theorem insertionSort_correct : IsNatSorter insertionSort := by
---   ...
-
 def insertIntoSorted {α : Type } (order: TotalOrder α) (xs : List α) (n : α) : List α :=
   match xs with
   | [] => [n]
@@ -26,7 +14,7 @@ def insertIntoSorted {α : Type } (order: TotalOrder α) (xs : List α) (n : α)
         then a :: insertIntoSorted order rest n
         else n :: a :: rest
 
-#eval insertIntoSorted natLeOrder [1, 2, 4, 5] 3
+example : insertIntoSorted natLeOrder [1, 2, 4, 5] 3  = [1,2,3,4,5] := by native_decide
 
 theorem insert_preserves_elements {α : Type}
   (order: TotalOrder α) (xs : List α) (n : α) :
@@ -107,8 +95,8 @@ theorem insert_preserves_order_short {α : Type}
 def insertionSort {α : Type} (order: TotalOrder α) (xs : List α) : List α :=
   xs.foldl (insertIntoSorted order) []
 
-#eval insertionSort natLeOrder [5,3,1,4,2]
-#eval insertionSort natLeOrder [1,2,1,2,1]
+example : insertionSort natLeOrder [5,3,1,4,2] = [1,2,3,4,5] := by native_decide
+example : insertionSort natLeOrder [1,2,1,2,1] = [1,1,1,2,2] := by native_decide
 
 theorem insertionSort_preserves_order_from_acc {α : Type}
     (order : TotalOrder α) (xs acc : List α) :
@@ -123,7 +111,6 @@ theorem insertionSort_preserves_order_from_acc {α : Type}
     simp
     exact ih (insertIntoSorted order acc x) (insert_preserves_order order acc x hacc)
 
-
 theorem insertion_sort_returns_ordered_list {α : Type}
     (order: TotalOrder α) (xs: List α) :
     IsOrdered order (insertionSort order xs) := by
@@ -132,3 +119,14 @@ theorem insertion_sort_returns_ordered_list {α : Type}
     unfold IsOrdered
     simp
   exact insertionSort_preserves_order_from_acc order xs [] hnil
+
+-- theorem insertion_sort_sorts_list {α : Type}
+--     (order: TotalOrder α) :
+--     Sorts order (insertionSort order) := by
+--   unfold Sorts
+--   unfold insertionSort
+--   let hnil : IsOrdered order [] := by
+--     unfold IsOrdered
+--     simp
+--   intro xs
+--   exact insertionSort_preserves_order_from_acc order xs [] hnil

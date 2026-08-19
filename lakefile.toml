@@ -8,3 +8,19 @@ name = "LeanStuff"
 [[lean_exe]]
 name = "lean-stuff"
 root = "Main"
+
+[[lean_exe]]
+name = "insertion-sort"
+root = "InsertionSortMain"
+
+[[lean_exe]]
+name = "merge-sort"
+root = "MergeSortMain"
+
+[[lean_exe]]
+name = "generate-numbers"
+root = "GenerateNumbersMain"
+
+[[lean_exe]]
+name = "benchmark"
+root = "Benchmark"
