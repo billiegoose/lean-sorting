@@ -26,21 +26,28 @@ partial def randomNumbers (count maxValue : Nat) : IO (List Nat) := do
 def fingerprint (xs : List Nat) : Nat × Option Nat × Option Nat :=
   (xs.length, xs.head?, xs.getLast?)
 
-def runTimed (sort : List Nat → List Nat) (input : List Nat) : IO Nat := do
-  let start ← IO.monoNanosNow
+def runOnce (sort : List Nat → List Nat) (input : List Nat) : IO Unit := do
   let sorted := sort input
   let fp := fingerprint sorted
   Runtime.hold fp
+
+def runTimed (sort : List Nat → List Nat) (input : List Nat) : IO Nat := do
+  -- these two are warmups
+  runOnce sort input
+  runOnce sort input
+  -- the third run is what's measured
+  let start ← IO.monoNanosNow
+  runOnce sort input
   let stop ← IO.monoNanosNow
   pure (stop - start)
 
-def pad3 (s : String) : String :=
-  String.ofList (List.replicate (3 - s.length) '0') ++ s
+def padLeft (width : Nat) (s : String) : String :=
+  String.ofList (List.replicate (width - s.length) '0') ++ s
 
 def nanosToMillis (nanos : Nat) : String :=
   let whole := nanos / 1000000
-  let frac := (nanos % 1000000) / 1000
-  s!"{whole}.{pad3 (toString frac)}"
+  let frac := nanos % 1000000
+  s!"{whole}.{padLeft 6 (toString frac)}"
 
 def csvCell : Option Nat → String
   | some nanos => nanosToMillis nanos
@@ -80,6 +87,6 @@ def run (args : List String) : IO Unit := do
     | _ => throw <| IO.userError usage
 
   IO.println "N,Insertion Sort,Merge Sort"
-  benchmarkLoop maxValue 100 true true
+  benchmarkLoop maxValue 1 true true
 
 end LeanSorting.Benchmark
