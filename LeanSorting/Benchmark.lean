@@ -1,4 +1,5 @@
 import Init.Data.Random
+import LeanSorting.CountingSort
 import LeanSorting.InsertionSort
 import LeanSorting.RecursiveMergeSort
 
@@ -54,8 +55,8 @@ def csvCell : Option Nat → String
   | none => ""
 
 def benchmarkOneSize
-    (maxValue size : Nat) (runInsertion runMerge : Bool) :
-    IO (Bool × Bool) := do
+    (maxValue size : Nat) (runInsertion runMerge runCounting : Bool) :
+    IO (Bool × Bool × Bool) := do
   let input ← randomNumbers size maxValue
   let insertionNanos? ←
     if runInsertion then
@@ -67,17 +68,23 @@ def benchmarkOneSize
       some <$> runTimed (mergeSort natLeOrder) input
     else
       pure none
-  IO.println s!"{size},{csvCell insertionNanos?},{csvCell mergeNanos?}"
+  let countingNanos? ←
+    if runCounting then
+      some <$> runTimed countingSort input
+    else
+      pure none
+  IO.println s!"{size},{csvCell insertionNanos?},{csvCell mergeNanos?},{csvCell countingNanos?}"
   pure
     (runInsertion && insertionNanos?.any (· <= thresholdNanos),
-     runMerge && mergeNanos?.any (· <= thresholdNanos))
+     runMerge && mergeNanos?.any (· <= thresholdNanos),
+     runCounting && countingNanos?.any (· <= thresholdNanos))
 
 partial def benchmarkLoop
-    (maxValue size : Nat) (runInsertion runMerge : Bool) : IO Unit := do
-  if runInsertion || runMerge then
-    let (runInsertion, runMerge) ←
-      benchmarkOneSize maxValue size runInsertion runMerge
-    benchmarkLoop maxValue (size * 2) runInsertion runMerge
+    (maxValue size : Nat) (runInsertion runMerge runCounting : Bool) : IO Unit := do
+  if runInsertion || runMerge || runCounting then
+    let (runInsertion, runMerge, runCounting) ←
+      benchmarkOneSize maxValue size runInsertion runMerge runCounting
+    benchmarkLoop maxValue (size * 2) runInsertion runMerge runCounting
 
 def run (args : List String) : IO Unit := do
   let maxValue ←
@@ -86,7 +93,7 @@ def run (args : List String) : IO Unit := do
     | [maxArg] => parseNatArg "max" maxArg
     | _ => throw <| IO.userError usage
 
-  IO.println "N,Insertion Sort,Merge Sort"
-  benchmarkLoop maxValue 1 true true
+  IO.println "N,Insertion Sort,Merge Sort,Counting Sort"
+  benchmarkLoop maxValue 1 true true true
 
 end LeanSorting.Benchmark

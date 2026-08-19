@@ -1,5 +1,6 @@
 import LeanSorting.Benchmark
 import LeanSorting.Cli
+import LeanSorting.CountingSort
 import LeanSorting.GenerateNumbers
 import LeanSorting.InsertionSort
 import LeanSorting.RecursiveMergeSort
@@ -13,6 +14,7 @@ def usage : String :=
     , "commands:"
     , "  insertion-sort          sort whitespace-separated natural numbers from stdin"
     , "  merge-sort              sort whitespace-separated natural numbers from stdin"
+    , "  counting-sort           sort whitespace-separated natural numbers from stdin"
     , "  generate-numbers COUNT [MAX]"
     , "  benchmark [MAX]"
     ]
@@ -23,6 +25,8 @@ def run (args : List String) : IO Unit := do
       LeanSorting.Cli.runNatSorter (insertionSort natLeOrder)
   | ["merge-sort"] =>
       LeanSorting.Cli.runNatSorter (mergeSort natLeOrder)
+  | ["counting-sort"] =>
+      LeanSorting.Cli.runNatSorter countingSort
   | "generate-numbers" :: args =>
       LeanSorting.GenerateNumbers.run args
   | "benchmark" :: args =>
