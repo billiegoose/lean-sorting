@@ -1,7 +1,9 @@
 import Init.Data.Random
 
+namespace LeanSorting.GenerateNumbers
+
 def usage : String :=
-  "usage: generate-numbers COUNT [MAX]"
+  "usage: lean-sorting generate-numbers COUNT [MAX]"
 
 def parseNatArg (name : String) (value : String) : IO Nat :=
   match value.toNat? with
@@ -18,7 +20,7 @@ partial def writeRandomNumbers (count maxValue : Nat) : IO Unit := do
         loop n
   loop count
 
-def main (args : List String) : IO Unit := do
+def run (args : List String) : IO Unit := do
   match args with
   | [countArg] =>
       let count ← parseNatArg "count" countArg
@@ -29,3 +31,5 @@ def main (args : List String) : IO Unit := do
       writeRandomNumbers count maxValue
   | _ =>
       throw <| IO.userError usage
+
+end LeanSorting.GenerateNumbers

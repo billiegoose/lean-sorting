@@ -1,4 +1,4 @@
-import LeanStuff.Sorting
+import LeanSorting.Sorting
 
 /-!
 # Insertion Sort
@@ -111,22 +111,31 @@ theorem insertionSort_preserves_order_from_acc {α : Type}
     simp
     exact ih (insertIntoSorted order acc x) (insert_preserves_order order acc x hacc)
 
-theorem insertion_sort_returns_ordered_list {α : Type}
-    (order: TotalOrder α) (xs: List α) :
-    IsOrdered order (insertionSort order xs) := by
+theorem insertionSort_preserves_elements_from_acc {α : Type}
+    (order : TotalOrder α) (xs acc : List α) :
+    List.Perm (xs.reverse ++ acc) (xs.foldl (insertIntoSorted order) acc) := by
+  induction xs generalizing acc with
+  | nil =>
+    simp
+  | cons x xs ih =>
+    simp
+    exact List.Perm.trans
+      ((insert_preserves_elements order acc x).append_left xs.reverse)
+      (ih (insertIntoSorted order acc x))
+
+theorem insertion_sort_sorts_correctly {α : Type}
+    (order: TotalOrder α) :
+    Sorts order (insertionSort order) := by
+  intro xs
+  unfold IsOrderedRearrangement
   unfold insertionSort
   let hnil : IsOrdered order [] := by
     unfold IsOrdered
     simp
-  exact insertionSort_preserves_order_from_acc order xs [] hnil
+  refine ⟨insertionSort_preserves_order_from_acc order xs [] hnil, ?_⟩
+  exact (List.reverse_perm xs).symm.trans
+    (by simpa using insertionSort_preserves_elements_from_acc order xs [])
 
--- theorem insertion_sort_sorts_list {α : Type}
---     (order: TotalOrder α) :
---     Sorts order (insertionSort order) := by
---   unfold Sorts
---   unfold insertionSort
---   let hnil : IsOrdered order [] := by
---     unfold IsOrdered
---     simp
---   intro xs
---   exact insertionSort_preserves_order_from_acc order xs [] hnil
+theorem insertion_sort_is_nat_le_sorter :
+    IsNatLeSorter (insertionSort natLeOrder) := by
+  exact insertion_sort_sorts_correctly natLeOrder

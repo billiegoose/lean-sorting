@@ -1,4 +1,4 @@
-import LeanStuff.Sorting
+import LeanSorting.Sorting
 
 /-!
 # Merge Sort (Recursive, halving)
@@ -159,6 +159,47 @@ termination_by as => as.length
 
 example : mergeSort natLeOrder [3,1,4,5,2] = [1,2,3,4,5] := by decide +native
 
--- theorem merge_sort_returns_ordered_list {α : Type}
---     (order: TotalOrder α) :
---     Sorts order (mergeSort order) := by
+theorem merge_sort_sorts_correctly {α : Type}
+    (order : TotalOrder α) :
+    Sorts order (mergeSort order) := by
+  intro xs
+  induction xs using mergeSort.induct order with
+  | case1 =>
+      unfold IsOrderedRearrangement
+      simp [mergeSort, IsOrdered]
+  | case2 a =>
+      unfold IsOrderedRearrangement
+      simp [mergeSort, IsOrdered]
+  | case3 a b rest as hordered =>
+      unfold IsOrderedRearrangement
+      simp [mergeSort, as, hordered]
+  | case4 a b rest as hnotSorted splitIndex htake hdrop =>
+      unfold IsOrderedRearrangement at htake hdrop ⊢
+      have hordered :
+          IsOrdered order
+            (mergeTwoLists order
+              (mergeSort order (as.take splitIndex))
+              (mergeSort order (as.drop splitIndex))) :=
+        merge_preserves_ordering_short order
+          (mergeSort order (as.take splitIndex))
+          (mergeSort order (as.drop splitIndex))
+          htake.1
+          hdrop.1
+      have hperm :
+          List.Perm as
+            (mergeTwoLists order
+              (mergeSort order (as.take splitIndex))
+              (mergeSort order (as.drop splitIndex))) := by
+        have hsplit : List.Perm as (as.take splitIndex ++ as.drop splitIndex) := by
+          rw [List.take_append_drop]
+        exact hsplit.trans
+          ((List.Perm.append htake.2 hdrop.2).trans
+            (merge_preserves_elements order
+              (mergeSort order (as.take splitIndex))
+              (mergeSort order (as.drop splitIndex))))
+      simpa [mergeSort, as, splitIndex, hnotSorted] using
+        And.intro hordered hperm
+
+theorem merge_sort_is_nat_le_sorter :
+    IsNatLeSorter (mergeSort natLeOrder) := by
+  exact merge_sort_sorts_correctly natLeOrder

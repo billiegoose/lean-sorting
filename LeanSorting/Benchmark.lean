@@ -1,9 +1,11 @@
 import Init.Data.Random
-import LeanStuff.InsertionSort
-import LeanStuff.RecursiveMergeSort
+import LeanSorting.InsertionSort
+import LeanSorting.RecursiveMergeSort
+
+namespace LeanSorting.Benchmark
 
 def usage : String :=
-  "usage: benchmark [MAX]"
+  "usage: lean-sorting benchmark [MAX]"
 
 def thresholdNanos : Nat :=
   400 * 1000 * 1000
@@ -70,7 +72,7 @@ partial def benchmarkLoop
       benchmarkOneSize maxValue size runInsertion runMerge
     benchmarkLoop maxValue (size * 2) runInsertion runMerge
 
-def main (args : List String) : IO Unit := do
+def run (args : List String) : IO Unit := do
   let maxValue ←
     match args with
     | [] => pure 1000000
@@ -79,3 +81,5 @@ def main (args : List String) : IO Unit := do
 
   IO.println "N,Insertion Sort,Merge Sort"
   benchmarkLoop maxValue 100 true true
+
+end LeanSorting.Benchmark

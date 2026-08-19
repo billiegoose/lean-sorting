@@ -1,4 +1,4 @@
-namespace LeanStuff.Cli
+namespace LeanSorting.Cli
 
 def parseNatToken (token : String) : IO Nat :=
   match token.toNat? with
@@ -20,4 +20,4 @@ def runNatSorter (sort : List Nat → List Nat) : IO Unit := do
   let nums ← parseNatStdin
   printNatList (sort nums)
 
-end LeanStuff.Cli
+end LeanSorting.Cli

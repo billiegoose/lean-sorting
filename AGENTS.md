@@ -2,21 +2,20 @@
 
 ## Project Overview
 
-This is a Lean 4 project managed by Lake. The library entry point is
-`LeanStuff.lean`, the executable entry point is `Main.lean`, and reusable
-modules live under `LeanStuff/`.
+This is a Lean 4 project managed by Lake. Reusable modules and the CLI
+entry point live under `LeanSorting/`.
 
 The project is pinned by `lean-toolchain` to `leanprover/lean4:v4.33.0`.
 
 ## Common Commands
 
 - Build everything with `lake build`.
-- Build the library with `lake build LeanStuff`.
-- Run the executable with `lake exe lean-stuff`.
+- Build the library modules with `lake build LeanSorting`.
+- Run the executable with `lake exe lean-sorting`.
 
 ## Lean Conventions
 
-- Keep public imports collected in `LeanStuff.lean`.
+- Keep command entrypoint logic in `LeanSorting/App.lean`.
 - Prefer small theorem statements near the definitions they justify.
 - Avoid leaving `sorry` in committed code.
 - Use Lake and the pinned toolchain instead of invoking a different local
